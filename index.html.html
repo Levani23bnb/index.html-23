@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>TIP-20 Token Creator</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.min.js"></script>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 2rem; background: #f0f4f8; }
+    h1 { color: #1e3a8a; }
+    input { padding: 0.5rem; margin: 0.5rem; }
+    button { padding: 0.5rem 1rem; margin: 0.5rem; border: none; border-radius: 5px; cursor: pointer; }
+    #connectBtn { background: #1e3a8a; color: white; }
+    #createBtn { background: #1e40af; color: white; }
+  </style>
+</head>
+<body>
+  <h1>TIP-20 Token Creator</h1>
+
+  <button id="connectBtn">Connect Wallet</button>
+  <p id="status" style="color: green;"></p>
+
+  <div>
+    <input id="name" placeholder="Token Name" />
+    <input id="symbol" placeholder="Symbol" />
+    <input id="supply" placeholder="Initial Supply" type="number" />
+  </div>
+
+  <button id="createBtn">Create Token</button>
+
+  <script>
+    const tip20FactoryAddress = '0x20Fc000000000000000000000000000000000000';
+    const tip20FactoryAbi = [
+      "function createToken(string name, string symbol, uint256 initialSupply) public returns (address)"
+    ];
+
+    let provider;
+    let signer;
+    let factoryContract;
+
+    async function connectWallet() {
+      if (typeof window.ethereum === 'undefined') {
+        alert('MetaMask not detected!');
+        return;
+      }
+
+      try {
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        provider = new ethers.BrowserProvider(window.ethereum);
+        signer = await provider.getSigner();
+        factoryContract = new ethers.Contract(tip20FactoryAddress, tip20FactoryAbi, signer);
+
+        const address = await signer.getAddress();
+        document.getElementById('status').textContent = 'Connected: ' + address;
+      } catch (err) {
+        console.error(err);
+        alert('Failed to connect wallet: ' + err.message);
+      }
+    }
+
+    async function createToken() {
+      if (!factoryContract) {
+        alert('Connect wallet first!');
+        return;
+      }
+
+      const name = document.getElementById('name').value;
+      const symbol = document.getElementById('symbol').value;
+      const supply = document.getElementById('supply').value;
+
+      if (!name || !symbol || !supply) {
+        alert('Fill all fields!');
+        return;
+      }
+
+      try {
+        const tx = await factoryContract.createToken(name, symbol, supply);
+        alert('Transaction sent! Check console for tx hash.');
+        console.log('Transaction:', tx);
+      } catch (err) {
+        console.error(err);
+        alert('Error: ' + err.message);
+      }
+    }
+
+    document.getElementById('connectBtn').onclick = connectWallet;
+    document.getElementById('createBtn').onclick = createToken;
+  </script>
+</body>
+</html>
